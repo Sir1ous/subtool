@@ -62,7 +62,7 @@ def TCPConnect(ip, port_nr, delay):
 
 def perform_scan(targets, ports):
     try:
-        subprocess.Popen('nmapa', stdout=subprocess.PIPE)
+        subprocess.Popen('nmap', stdout=subprocess.PIPE)
         do_nmap_scan(targets, ports)
     except:
         perr("nmap not found, using built-in scanner!")
@@ -111,14 +111,15 @@ def check_scope(target_ip, scope):
     return True if netaddr.IPAddress(target_ip) in netaddr.IPNetwork(scope) else False
 
 if __name__=='__main__':
-    parser = argparse.ArgumentParser(description='This script aims to help with processing output from subdomain enumeration tools. It has the ability to resolve domains, check them against target scope, and perform port scans.', epilog="example: %s -f domains.json -fj -o output.json -oj -s 172.0.0.0/8 --scan --ports 80,443,8443" % os.path.basename(__file__))
-    parser.add_argument('-f', dest='file', type=str, required=True,
+    parser = argparse.ArgumentParser(description='This script aims to help with processing output from subdomain enumeration tools. It has the ability to resolve domains, check them against target scope, and perform port scans.', epilog="example: %s -fj domains.json -o output.txt -oj output.json -s 172.0.0.0/8 --scan --ports 80,443,8443" % os.path.basename(__file__))
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument('-f', dest='file', type=str,
                         help='Input file')
+    input_group.add_argument('-fj', dest='file_json', type=str,
+                        help='Parse input file as JSON')
     parser.add_argument('-o', dest='output', type=str,
                         help='Output file')
-    parser.add_argument('-fj', dest='json', action='store_true',
-                        help='Parse input file as JSON')
-    parser.add_argument('-oj', dest='outputjson', action='store_true',
+    parser.add_argument('-oj', dest='output_json', type=str,
                         help='Output in JSON format')
     parser.add_argument('-sf', dest='scope_file', type=str,
                         help='File with target scope (IP ranges or single IP addresses)')
@@ -131,7 +132,7 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     pinfo("Parsing input data")
-    hostnames = read_data(args.file, args.json)
+    hostnames = read_data(args.file, False) if not args.file_json else read_data(args.file_json, True)
 
     pinfo("Resolving domains")
     results_unfiltered = resolve_domains(hostnames)
@@ -145,20 +146,17 @@ if __name__=='__main__':
 
     results = filter_domains(results_unfiltered, scope)
 
-    if args.output != None:
-        with open(args.output, "w") as f:
-            if args.outputjson:
-                f.write(json.dumps(results))
-            else:
+    if args.output or args.output_json:
+        if args.output:
+            with open(args.output, "w") as f:
                 for hostname,ip in results.iteritems():
                     f.write("%s:%s\n" % (hostname,ip))
+        if args.output_json:
+            with open(args.output_json, "w") as f:
+                f.write(json.dumps(results))
     else:
-        if args.outputjson:
-            from pprint import pprint as p
-            p(json.dumps(results))
-        else:
-            for hostname, ip in results.iteritems():
-                print("%s:%s" % (hostname,ip))
+        for hostname, ip in results.iteritems():
+            print("%s:%s" % (hostname,ip))
 
     if args.ifscan:
         perform_scan(results, args.ports)
