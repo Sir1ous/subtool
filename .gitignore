@@ -1,2 +1,5 @@
 *.txt
+*.nmap
+*.gnmap
+*.xml
 *.json
