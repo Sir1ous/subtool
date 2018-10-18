@@ -1,3 +1,4 @@
+```
 usage: subtool.py [-h] -f FILE [-o OUTPUT] [-fj] [-oj] [-sf SCOPE_FILE]
                   [-s SCOPE_SINGLE] [--scan] [--ports PORTS]
 
@@ -18,3 +19,4 @@ optional arguments:
 
 example: subtool.py -f domains.json -fj -o output.json -oj -s 172.0.0.0/8
 --scan --ports 80,443,8443
+```
